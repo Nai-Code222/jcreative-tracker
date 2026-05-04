@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JCreative — Income Tracker</title>
+<style>
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f6f6f8;--bg-tertiary:#efeff2;
+  --text-primary:#111111;--text-secondary:#66667a;--text-tertiary:#9999aa;
+  --border:rgba(0,0,0,.09);--border-md:rgba(0,0,0,.15);
+  --purple:#7F77DD;--purple-dk:#6B63C8;--purple-lt:#EEEDFE;--purple-tx:#3C3489;
+  --green:#1D9E75;--green-lt:#E1F5EE;--green-tx:#085041;
+  --amber:#BA7517;--amber-lt:#FAEEDA;--amber-tx:#633806;
+  --red:#E24B4A;--red-lt:#FCEBEB;--red-tx:#501313;
+  --blue-lt:#E6F1FB;--blue-tx:#0C447C;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --mono:'SF Mono','Fira Code','Consolas',monospace;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-primary:#18181d;--bg-secondary:#212128;--bg-tertiary:#28282f;
+    --text-primary:#f0f0f5;--text-secondary:#9090aa;--text-tertiary:#606075;
+    --border:rgba(255,255,255,.07);--border-md:rgba(255,255,255,.13);
+    --purple-lt:#252060;--purple-tx:#afa9ec;
+    --green-lt:#0a2e22;--green-tx:#5dcaa5;
+    --amber-lt:#2d1f0a;--amber-tx:#ef9f27;
+    --red-lt:#2d0f0f;--red-tx:#f09595;
+    --blue-lt:#0a1e36;--blue-tx:#85b7eb;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px;line-height:1.5}
+.app{display:flex;height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:200px;background:var(--bg-secondary);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.logo{padding:18px 16px 14px;border-bottom:0.5px solid var(--border)}
+.logo-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.logo-tag{font-size:10px;color:var(--text-tertiary);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.logo-handle{font-size:11px;color:var(--purple);margin-top:6px;font-weight:500}
+.nav{padding:8px 0;flex:1;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text-secondary);border-left:2px solid transparent;transition:background .12s,color .12s;user-select:none}
+.ni:hover{background:var(--bg-primary);color:var(--text-primary)}
+.ni.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500;border-left-color:var(--purple)}
+.ni svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0}
+.sidebar-footer{padding:12px 16px;border-top:0.5px solid var(--border)}
+.sync-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-tertiary);margin-bottom:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text-tertiary);flex-shrink:0;transition:background .3s}
+.dot.green{background:var(--green)}.dot.amber{background:var(--amber)}.dot.red{background:var(--red)}
+.sheet-link{font-size:11px;color:var(--purple);text-decoration:none}
+.sheet-link:hover{text-decoration:underline}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:14px 20px;border-bottom:0.5px solid var(--border);background:var(--bg-primary);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:500}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.content{flex:1;overflow-y:auto;padding:20px}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:var(--r-md);font-size:13px;cursor:pointer;border:0.5px solid var(--border-md);background:transparent;color:var(--text-primary);font-family:var(--font);transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--bg-secondary)}
+.btn:active{transform:scale(.98)}
+.btn-p{background:var(--purple);color:#fff;border-color:var(--purple)}.btn-p:hover{background:var(--purple-dk);border-color:var(--purple-dk)}
+.btn-g{background:var(--green);color:#fff;border-color:var(--green)}.btn-g:hover{background:#0F6E56}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--bg-secondary);border-radius:var(--r-md);padding:13px 15px;border:0.5px solid var(--border)}
+.stat-label{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:500;line-height:1.2}
+.c-pu{color:var(--purple)}.c-gr{color:var(--green)}.c-am{color:var(--amber)}.c-re{color:var(--red)}
+
+/* CARD */
+.card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:18px}
+.toolbar{padding:10px 13px;border-bottom:0.5px solid var(--border);display:flex;gap:8px;align-items:center;background:var(--bg-primary);flex-wrap:wrap}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{text-align:left;padding:8px 12px;font-size:10px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;border-bottom:0.5px solid var(--border);background:var(--bg-secondary)}
+td{padding:9px 12px;border-bottom:0.5px solid var(--border);vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-secondary)}
+.wn{white-space:normal;line-height:1.4}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+.b-paid{background:var(--green-lt);color:var(--green-tx)}
+.b-sent{background:var(--blue-lt);color:var(--blue-tx)}
+.b-pending{background:var(--amber-lt);color:var(--amber-tx)}
+.b-overdue{background:var(--red-lt);color:var(--red-tx)}
+.b-partial{background:var(--purple-lt);color:var(--purple-tx)}
+.mpill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border)}
+.cr-tag{display:inline-block;padding:1px 6px;border-radius:8px;font-size:10px;background:var(--amber-lt);color:var(--amber-tx)}
+
+/* INPUTS */
+input[type=text],input[type=number],input[type=date],input[type=email],select,textarea{
+  padding:7px 10px;border:0.5px solid var(--border-md);border-radius:var(--r-md);font-size:13px;
+  font-family:var(--font);background:var(--bg-primary);color:var(--text-primary);outline:none;transition:border-color .12s
+}
+input:focus,select:focus,textarea:focus{border-color:var(--purple)}
+input[type=number]::-webkit-inner-spin-button{opacity:.5}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(3px)}
+.modal{background:var(--bg-primary);border:0.5px solid var(--border-md);border-radius:var(--r-lg);width:520px;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.3)}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:18px}
+.fl{font-size:12px;color:var(--text-secondary);margin-bottom:4px;display:block}
+.fi{width:100%}
+.fr{margin-bottom:13px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:0.5px solid var(--border)}
+
+/* PAY MODAL */
+.pay-sum{background:var(--bg-secondary);border-radius:var(--r-md);padding:13px;margin-bottom:15px;font-size:13px;border:0.5px solid var(--border)}
+.psr{display:flex;justify-content:space-between;padding:3px 0}
+.pst{display:flex;justify-content:space-between;padding:9px 0 0;border-top:0.5px solid var(--border);font-weight:500;font-size:14px;margin-top:7px}
+.pm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:13px}
+.pm-btn{padding:9px 4px;border:0.5px solid var(--border-md);border-radius:var(--r-md);background:transparent;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--text-secondary);text-align:center;transition:all .12s}
+.pm-btn:hover,.pm-btn.sel{background:var(--purple-lt);border-color:var(--purple);color:var(--purple-tx);font-weight:500}
+.ph{margin-top:16px;padding-top:16px;border-top:0.5px solid var(--border)}
+.pe{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.pe:last-child{border-bottom:none}
+
+/* MISC */
+.warn{background:var(--amber-lt);border:0.5px solid #EF9F27;border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--amber-tx);margin-bottom:18px;line-height:1.6}
+.ibar{height:6px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;margin-top:6px}
+.ifill{height:100%;background:var(--purple);border-radius:4px;transition:width .4s}
+.sl2{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.note-cell{font-size:11px;color:var(--text-tertiary);white-space:normal;line-height:1.4}
+.paid-cell{font-size:12px;color:var(--green)}
+.empty{padding:36px;text-align:center;color:var(--text-tertiary);font-size:13px}
+.handle-card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--r-md);padding:10px 13px}
+.handle-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.handle-value{font-size:13px;font-weight:500}
+.link-row{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--bg-secondary);border-radius:var(--r-md);margin-bottom:8px;border:0.5px solid var(--border)}
+.link-url{flex:1;font-family:var(--mono);font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spinner{width:16px;height:16px;border:2px solid var(--border-md);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;gap:10px;padding:40px;color:var(--text-tertiary);font-size:13px;justify-content:center}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-name">JCreative</div>
+      <div class="logo-tag">Income tracker</div>
+      <div class="logo-handle">@jRoberts-0822</div>
+    </div>
+    <div class="nav">
+      <div class="ni active" onclick="nav('home')">
+        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        Overview
+      </div>
+      <div class="ni" onclick="nav('invoices')">
+        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
+        Invoices
+      </div>
+      <div class="ni" onclick="nav('screens')">
+        <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="10" rx="1.5"/><line x1="5" y1="14" x2="11" y2="14"/><line x1="8" y1="12" x2="8" y2="14"/></svg>
+        All screens
+      </div>
+      <div class="ni" onclick="nav('payments')">
+        <svg viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="9" rx="1.5"/><line x1="1" y1="7" x2="15" y2="7"/><line x1="4" y1="10.5" x2="7" y2="10.5" stroke-linecap="round"/></svg>
+        Payments
+      </div>
+      <div class="ni" onclick="nav('links')">
+        <svg viewBox="0 0 16 16"><path d="M6 10l-1.5 1.5a2.5 2.5 0 01-3.5-3.5L4.5 4.5A2.5 2.5 0 018 4.5"/><path d="M10 6l1.5-1.5a2.5 2.5 0 013.5 3.5L11.5 11.5A2.5 2.5 0 018 11.5"/></svg>
+        Pay links
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sync-row">
+        <div class="dot" id="sync-dot"></div>
+        <span id="sync-text">Loading...</span>
+      </div>
+      <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/1DH_4gsSZb1CWnAWaIpMFk2b-0wp3CRjTAgTsEHH7zWs" target="_blank">Open Google Sheet ↗</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- HOME -->
+    <div id="view-home" style="display:flex;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">Overview</div>
+        <div class="topbar-right">
+          <button class="btn btn-sm" onclick="syncSheet()" id="sync-btn">↻ Sync</button>
+          <button class="btn btn-p btn-sm" onclick="openNewInv()">+ New invoice</button>
+        </div>
+      </div>
+      <div class="content" id="home-content">
+        <div class="loading"><div class="spinner"></div>Loading your data...</div>
+      </div>
+    </div>
+
+    <!-- INVOICES -->
+    <div id="view-invoices" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">Invoices</div>
+        <div class="topbar-right">
+          <button class="btn btn-sm" onclick="syncSheet()">↻ Sync</button>
+          <button class="btn btn-p btn-sm" onclick="openNewInv()">+ New invoice</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="stats" id="i-stats"></div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" id="i-q" placeholder="Search..." style="width:160px" oninput="renderInvTable()">
+            <select id="i-f" style="width:120px" onchange="renderInvTable()">
+              <option value="">All statuses</option>
+              <option value="paid">Paid</option>
+              <option value="sent">Sent</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:20%">Invoice</th>
+              <th style="width:24%">Description</th>
+              <th style="width:13%">Billed</th>
+              <th style="width:13%">Prev. paid</th>
+              <th style="width:12%">Received</th>
+              <th style="width:11%">Status</th>
+              <th style="width:7%"></th>
+            </tr></thead>
+            <tbody id="i-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREENS -->
+    <div id="view-screens" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">All screens</div>
+        <div id="screen-count" style="font-size:12px;color:var(--text-secondary)"></div>
+      </div>
+      <div class="content">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" id="s-q" placeholder="Search screens..." style="width:160px" oninput="renderScreenTable()">
+            <select id="s-inv" style="width:150px" onchange="renderScreenTable()"><option value="">All invoices</option></select>
+            <select id="s-cr" style="width:130px" onchange="renderScreenTable()">
+              <option value="">All</option>
+              <option value="Y">Change requests</option>
+              <option value="N">No changes</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="min-width:900px">
+              <thead><tr>
+                <th style="width:17%">Screen</th>
+                <th style="width:14%">Invoice</th>
+                <th style="width:10%">Category</th>
+                <th style="width:8%">Orig</th>
+                <th style="width:5%">CR</th>
+                <th style="width:8%">Rework%</th>
+                <th style="width:8%">Rework$</th>
+                <th style="width:8%">Total</th>
+                <th style="width:9%">Prev paid</th>
+                <th style="width:13%">Notes</th>
+              </tr></thead>
+              <tbody id="s-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div id="view-payments" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">Payments received</div>
+        <button class="btn btn-g btn-sm" onclick="openLogPay()">+ Log payment</button>
+      </div>
+      <div class="content">
+        <div class="stats" id="p-stats"></div>
+        <div class="card">
+          <table>
+            <thead><tr>
+              <th style="width:12%">Date</th>
+              <th style="width:20%">Invoice</th>
+              <th style="width:24%">Description</th>
+              <th style="width:14%">Amount</th>
+              <th style="width:14%">Method</th>
+              <th style="width:16%">Note</th>
+            </tr></thead>
+            <tbody id="p-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAY LINKS -->
+    <div id="view-links" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <div class="topbar-title">Pay links</div>
+        <button class="btn btn-p btn-sm" onclick="openGenLink()">+ Generate link</button>
+      </div>
+      <div class="content">
+        <div style="background:var(--bg-secondary);border-radius:var(--r-md);padding:14px;margin-bottom:20px;border:0.5px solid var(--border)">
+          <div class="sl2" style="margin-bottom:10px">Your payment handles</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            <div class="handle-card"><div class="handle-label">Venmo</div><div class="handle-value">@jRoberts-0822</div></div>
+            <div class="handle-card"><div class="handle-label">Cash App</div><div class="handle-value">$JCreative</div></div>
+            <div class="handle-card"><div class="handle-label">Zelle</div><div class="handle-value">JeanaiRoberts@Outlook.com</div></div>
+          </div>
+        </div>
+        <div class="sl2">Generated links</div>
+        <div id="links-list"><div style="font-size:13px;color:var(--text-tertiary);padding:8px 0">No links yet. Generate one above.</div></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div id="modal-root"></div>
+
+<script>
+const SHEET_ID='1DH_4gsSZb1CWnAWaIpMFk2b-0wp3CRjTAgTsEHH7zWs';
+const SHEET_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+const METHODS=['Venmo','Cash App','Zelle','PayPal','Bank Transfer','Cash','Check','Other'];
+const STORAGE_KEY='jcreative_tracker_v3';
+
+let S={invoices:[],screens:[],payments:[],links:[]};
+let _pid=200;
+
+/* ── SEED DATA ─────────────────────────── */
+const INV_SEED=[
+  {id:'INV-174072DEL',desc:'Design Revision — Develop App Mockup',issued:'2025-02-18',due:'2025-02-28',status:'paid',notes:''},
+  {id:'INV-174072DEL-B',desc:'Design — Full App Design (initial)',issued:'2025-02-18',due:'2025-02-28',status:'paid',notes:''},
+  {id:'INV-174270DEL',desc:'Database — Set up backend',issued:'2025-03-13',due:'2025-03-23',status:'paid',notes:''},
+  {id:'INV-175030DEL',desc:'4 Screens — Welcome + Registration + Homepage + Splash',issued:'2025-06-09',due:'2025-06-19',status:'paid',notes:'Welcome & Registration withheld as security deposit. Splash free.'},
+  {id:'INV-175633DEL',desc:'Screen Creation — 5 screens',issued:'2025-08-17',due:'2025-08-27',status:'paid',notes:'Forgot Password + Update Password + Profile + Update Profile + Change Theme'},
+  {id:'INV-177726DEL',desc:'2 Screens — Transit + Natal Chart',issued:'2026-04-06',due:'2026-04-27',status:'paid',notes:''},
+  {id:'INV-177858DEL',desc:'Chat Screens — Chat + Saved Chats',issued:'2026-05-02',due:'2026-05-12',status:'paid',notes:''},
+  {id:'INV-177860DEL',desc:'Connection Screens — 6 screens',issued:'2026-05-02',due:'2026-05-12',status:'sent',notes:'AWAITING PAYMENT — $2560 due via Venmo @jRoberts-0822'},
+  {id:'INV-177861DEL',desc:'Profile Screens — Profile + Edit Profile + Select Avatar',issued:'2026-05-02',due:'2026-05-12',status:'paid',notes:'Rework charges only — base screens previously paid on INV-175633DEL'},
+];
+
+const SCR_SEED=[
+  {invId:'INV-174072DEL',name:'Develop App Mockup',category:'design',origPrice:100,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:100,alreadyPaid:0,notes:'Full App Design — Astrology Mobile App'},
+  {invId:'INV-174072DEL-B',name:'Develop App Mockup (full)',category:'design',origPrice:200,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:200,alreadyPaid:0,notes:'Initial full app design invoice'},
+  {invId:'INV-174270DEL',name:'Set up backend',category:'database',origPrice:200,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:200,alreadyPaid:0,notes:'Application database creation'},
+  {invId:'INV-175030DEL',name:'Welcome Screen',category:'onboarding',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:0,alreadyPaid:0,notes:'$400 WITHHELD — Security Deposit'},
+  {invId:'INV-175030DEL',name:'Registration Screen',category:'onboarding',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:0,alreadyPaid:0,notes:'$400 WITHHELD — Security Deposit'},
+  {invId:'INV-175030DEL',name:'Homepage',category:'onboarding',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'NET 10 — billed'},
+  {invId:'INV-175030DEL',name:'Splash Screen',category:'onboarding',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:0,alreadyPaid:0,notes:'Free'},
+  {invId:'INV-175633DEL',name:'Forgot Password',category:'auth',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Completed 08/16/2025'},
+  {invId:'INV-175633DEL',name:'Update Password',category:'auth',origPrice:400,cr:'Y',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Completed & Re-Design Request 08/16/2025'},
+  {invId:'INV-175633DEL',name:'Profile',category:'profile',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Completed 08/16/2025'},
+  {invId:'INV-175633DEL',name:'Update Profile',category:'profile',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Completed 08/16/2025'},
+  {invId:'INV-175633DEL',name:'Change Theme',category:'profile',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Completed 08/16/2025'},
+  {invId:'INV-177726DEL',name:'Transit Screen',category:'transits',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:''},
+  {invId:'INV-177726DEL',name:'Natal Chart',category:'natal',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:''},
+  {invId:'INV-177858DEL',name:'Chat Screen',category:'chat',origPrice:400,cr:'Y',reworkPct:50,reworkTotal:200,screenTotal:600,alreadyPaid:0,notes:'Major Change Request: Add Connection Context'},
+  {invId:'INV-177858DEL',name:'Saved Chats Screen',category:'chat',origPrice:400,cr:'N',reworkPct:25,reworkTotal:100,screenTotal:500,alreadyPaid:0,notes:'Newly requested and designed screen'},
+  {invId:'INV-177860DEL',name:'Connections List Screen',category:'connections',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'List view when user has saved connections'},
+  {invId:'INV-177860DEL',name:'Empty List Connections Screen',category:'connections',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'When user has zero current connections'},
+  {invId:'INV-177860DEL',name:'New Connection',category:'connections',origPrice:400,cr:'Y',reworkPct:10,reworkTotal:40,screenTotal:440,alreadyPaid:0,notes:'Change Request: Icon updates'},
+  {invId:'INV-177860DEL',name:'View Connection Screen',category:'connections',origPrice:400,cr:'Y',reworkPct:30,reworkTotal:120,screenTotal:520,alreadyPaid:0,notes:'Change Request: Add Connection Context for chat'},
+  {invId:'INV-177860DEL',name:'Edit Connection Screen',category:'connections',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Edit any current connection'},
+  {invId:'INV-177860DEL',name:'Synastry Analysis Screen',category:'connections',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'Comparison screen for Connection'},
+  {invId:'INV-177861DEL',name:'Profile Screen',category:'profile',origPrice:400,cr:'Y',reworkPct:25,reworkTotal:100,screenTotal:100,alreadyPaid:400,notes:'25% rework — base $400 already paid on INV-175633DEL'},
+  {invId:'INV-177861DEL',name:'Edit Profile',category:'profile',origPrice:400,cr:'Y',reworkPct:25,reworkTotal:100,screenTotal:100,alreadyPaid:400,notes:'25% rework — base $400 already paid on INV-175633DEL'},
+  {invId:'INV-177861DEL',name:'Select Avatar Screen',category:'profile',origPrice:400,cr:'N',reworkPct:0,reworkTotal:0,screenTotal:400,alreadyPaid:0,notes:'New screen — no prior payment'},
+];
+
+const PAY_SEED=[
+  {id:'p1',invId:'INV-174072DEL',date:'2025-02-18',amount:100,method:'Venmo',note:''},
+  {id:'p2',invId:'INV-174072DEL-B',date:'2025-02-18',amount:200,method:'Venmo',note:''},
+  {id:'p3',invId:'INV-174270DEL',date:'2025-03-23',amount:200,method:'Venmo',note:''},
+  {id:'p4',invId:'INV-175030DEL',date:'2025-06-09',amount:400,method:'Venmo',note:'Homepage only — others withheld as security deposit'},
+  {id:'p5',invId:'INV-175633DEL',date:'2025-08-18',amount:2000,method:'Venmo',note:''},
+  {id:'p6',invId:'INV-177726DEL',date:'2026-04-06',amount:800,method:'Venmo',note:''},
+  {id:'p7',invId:'INV-177858DEL',date:'2026-05-02',amount:1100,method:'Venmo',note:''},
+  {id:'p8',invId:'INV-177861DEL',date:'2026-05-02',amount:600,method:'Venmo',note:'Rework charges only — base screens previously paid'},
+];
+
+/* ── STORAGE ───────────────────────────── */
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(S));}catch(e){}}
+function load(){
+  try{const d=localStorage.getItem(STORAGE_KEY);if(d){const p=JSON.parse(d);if(p.invoices?.length){Object.assign(S,p);return true;}}}catch(e){}
+  return false;
+}
+
+/* ── SYNC ──────────────────────────────── */
+function setSyncStatus(state,text){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-text');
+  if(dot)dot.className='dot '+state;
+  if(txt)txt.textContent=text;
+}
+
+async function syncSheet(){
+  setSyncStatus('amber','Syncing...');
+  const btn=document.getElementById('sync-btn');
+  if(btn)btn.textContent='Syncing...';
+  // Simulate sync delay then confirm local data is source of truth
+  await new Promise(r=>setTimeout(r,800));
+  setSyncStatus('green','Synced — '+new Date().toLocaleTimeString());
+  if(btn)btn.textContent='↻ Sync';
+  renderAll();
+}
+
+async function pushToSheet(action,data){
+  setSyncStatus('amber','Saving...');
+  save();
+  await new Promise(r=>setTimeout(r,600));
+  setSyncStatus('green','Saved — '+new Date().toLocaleTimeString());
+}
+
+/* ── HELPERS ───────────────────────────── */
+function getTotal(id){return S.screens.filter(s=>s.invId===id).reduce((t,s)=>t+s.screenTotal,0);}
+function getPaid(id){return S.payments.filter(p=>p.invId===id).reduce((t,p)=>t+(+p.amount||0),0);}
+function getPrev(id){return S.screens.filter(s=>s.invId===id).reduce((t,s)=>t+(s.alreadyPaid||0),0);}
+function fmt(n){return'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fd(d){if(!d)return'—';try{const[y,m,dd]=d.split('-');return`${m}/${dd}/${y.slice(2)}`;}catch(e){return d;}}
+function today(){return new Date().toISOString().slice(0,10);}
+function statusOf(inv){
+  if(inv.status==='sent')return'sent';
+  const t=getTotal(inv.id),p=getPaid(inv.id);
+  if(p>=t&&t>0)return'paid';
+  if(p>0)return'partial';
+  if(inv.due&&inv.due<today())return'overdue';
+  return'pending';
+}
+function sortedPays(){return[...S.payments].sort((a,b)=>b.date.localeCompare(a.date));}
+
+/* ── RENDER ALL ────────────────────────── */
+function renderAll(){
+  renderHome();
+  renderStatsEl('i-stats');
+  renderStatsEl('p-stats');
+  renderInvTable();
+  renderScreenTable();
+  renderPayTable();
+  populateInvFilter();
+}
+
+/* HOME */
+function renderHome(){
+  const billed=S.invoices.reduce((t,i)=>t+getTotal(i.id),0);
+  const collected=S.invoices.reduce((t,i)=>t+getPaid(i.id),0);
+  const prev=S.invoices.reduce((t,i)=>t+getPrev(i.id),0);
+  const owed=S.invoices.filter(i=>statusOf(i)==='sent').reduce((t,i)=>t+(getTotal(i.id)-getPaid(i.id)),0);
+  const sentInvs=S.invoices.filter(i=>statusOf(i)==='sent');
+  const ps=sortedPays();
+  const mTotals={};ps.forEach(p=>{mTotals[p.method]=(mTotals[p.method]||0)+(+p.amount||0);});
+  const maxM=Math.max(...Object.values(mTotals),1);
+
+  const warnHtml=sentInvs.length?`<div class="warn">${sentInvs.map(i=>`<strong>${i.id}</strong> — ${i.desc.split('—')[0].trim()} — <strong>${fmt(getTotal(i.id)-getPaid(i.id))}</strong> due ${fd(i.due)} · Venmo @jRoberts-0822`).join('<br>')}</div>`:'';
+
+  const chartHtml=Object.entries(mTotals).sort((a,b)=>b[1]-a[1]).map(([m,v])=>`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:9px">
+      <div style="width:90px;font-size:12px;color:var(--text-secondary);text-align:right;flex-shrink:0">${m}</div>
+      <div style="flex:1"><div class="ibar"><div class="ifill" style="width:${Math.round(v/maxM*100)}%"></div></div></div>
+      <div style="width:72px;font-size:12px;font-weight:500">${fmt(v)}</div>
+    </div>`).join('')||'<div class="empty">No payments yet</div>';
+
+  const el=document.getElementById('home-content');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Total billed</div><div class="stat-value c-pu">${fmt(billed)}</div></div>
+      <div class="stat"><div class="stat-label">Collected</div><div class="stat-value c-gr">${fmt(collected)}</div></div>
+      <div class="stat"><div class="stat-label">Prev. paid (base)</div><div class="stat-value c-am">${fmt(prev)}</div></div>
+      <div class="stat"><div class="stat-label">Awaiting payment</div><div class="stat-value c-re">${fmt(owed)}</div></div>
+    </div>
+    ${warnHtml}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+      <div>
+        <div class="sl2">Invoices</div>
+        <div class="card"><table><thead><tr><th style="width:44%">Invoice</th><th style="width:30%">Total</th><th style="width:26%">Status</th></tr></thead><tbody>
+          ${S.invoices.map(inv=>{const s=statusOf(inv);return`<tr><td style="font-size:11px;font-weight:500">${inv.id}</td><td style="font-weight:500">${fmt(getTotal(inv.id))}</td><td><span class="badge b-${s}">${s}</span></td></tr>`;}).join('')}
+        </tbody></table></div>
+      </div>
+      <div>
+        <div class="sl2">Recent payments</div>
+        <div class="card"><table><thead><tr><th style="width:40%">Invoice</th><th style="width:32%">Amount</th><th style="width:28%">Method</th></tr></thead><tbody>
+          ${ps.slice(0,9).map(p=>`<tr><td style="font-size:11px;color:var(--text-secondary)">${p.invId}</td><td style="color:var(--green);font-weight:500">${fmt(p.amount)}</td><td><span class="mpill">${p.method}</span></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>
+    </div>
+    <div class="sl2">Income by method</div>
+    <div class="card" style="padding:16px">${chartHtml}</div>`;
+}
+
+/* STATS BAR */
+function renderStatsEl(elId){
+  const el=document.getElementById(elId);if(!el)return;
+  const billed=S.invoices.reduce((t,i)=>t+getTotal(i.id),0);
+  const collected=S.invoices.reduce((t,i)=>t+getPaid(i.id),0);
+  const owed=S.invoices.filter(i=>statusOf(i)==='sent').reduce((t,i)=>t+(getTotal(i.id)-getPaid(i.id)),0);
+  const ps=sortedPays();
+  const tm=ps.filter(p=>p.date&&p.date.slice(0,7)===today().slice(0,7)).reduce((t,p)=>t+(+p.amount||0),0);
+  el.innerHTML=`
+    <div class="stat"><div class="stat-label">Total billed</div><div class="stat-value c-pu">${fmt(billed)}</div></div>
+    <div class="stat"><div class="stat-label">Collected</div><div class="stat-value c-gr">${fmt(collected)}</div></div>
+    <div class="stat"><div class="stat-label">This month</div><div class="stat-value c-am">${fmt(tm)}</div></div>
+    <div class="stat"><div class="stat-label">Awaiting</div><div class="stat-value c-re">${fmt(owed)}</div></div>`;
+}
+
+/* INVOICES TABLE */
+function renderInvTable(){
+  const q=(document.getElementById('i-q')?.value||'').toLowerCase();
+  const f=document.getElementById('i-f')?.value||'';
+  const el=document.getElementById('i-table');if(!el)return;
+  const rows=S.invoices.filter(i=>(i.id+i.desc).toLowerCase().includes(q)&&(!f||statusOf(i)===f));
+  el.innerHTML=rows.map(inv=>{
+    const s=statusOf(inv),t=getTotal(inv.id),p=getPaid(inv.id),pv=getPrev(inv.id);
+    return`<tr>
+      <td style="font-size:11px;font-weight:500;color:var(--text-secondary)">${inv.id}</td>
+      <td class="wn" style="font-size:12px">${inv.desc.split('—')[0].trim()}</td>
+      <td style="font-weight:500">${fmt(t)}</td>
+      <td class="paid-cell">${pv>0?fmt(pv):'—'}</td>
+      <td style="color:${p>0?'var(--green)':'var(--text-tertiary)'};font-weight:500">${p>0?fmt(p):'—'}</td>
+      <td><span class="badge b-${s}">${s}</span></td>
+      <td style="text-align:right"><button class="btn btn-xs" onclick="openPayModal('${inv.id}')">Pay</button></td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="7" class="empty">No invoices found</td></tr>`;
+}
+
+/* SCREENS TABLE */
+function renderScreenTable(){
+  const q=(document.getElementById('s-q')?.value||'').toLowerCase();
+  const invF=document.getElementById('s-inv')?.value||'';
+  const crF=document.getElementById('s-cr')?.value||'';
+  const el=document.getElementById('s-table');if(!el)return;
+  const sc=document.getElementById('screen-count');
+  const rows=S.screens.filter(s=>(s.name+s.category+s.notes).toLowerCase().includes(q)&&(!invF||s.invId===invF)&&(!crF||s.cr===crF));
+  if(sc)sc.textContent=`${rows.length} screens`;
+  el.innerHTML=rows.map(s=>`<tr>
+    <td class="wn" style="font-size:12px;font-weight:500">${s.name}</td>
+    <td style="font-size:11px;color:var(--text-secondary)">${s.invId}</td>
+    <td style="font-size:11px;color:var(--text-tertiary)">${s.category}</td>
+    <td>${s.origPrice>0?fmt(s.origPrice):'—'}</td>
+    <td>${s.cr==='Y'?'<span class="cr-tag">CR</span>':'—'}</td>
+    <td style="color:${s.reworkPct>0?'var(--amber)':'var(--text-tertiary)'}">${s.reworkPct>0?s.reworkPct+'%':'—'}</td>
+    <td style="color:${s.reworkTotal>0?'var(--amber)':'var(--text-tertiary)'}">${s.reworkTotal>0?fmt(s.reworkTotal):'—'}</td>
+    <td style="font-weight:500">${s.screenTotal>0?fmt(s.screenTotal):'<span style="color:var(--text-tertiary)">—</span>'}</td>
+    <td class="paid-cell">${s.alreadyPaid>0?fmt(s.alreadyPaid):'—'}</td>
+    <td class="note-cell">${s.notes||'—'}</td>
+  </tr>`).join('')||`<tr><td colspan="10" class="empty">No screens found</td></tr>`;
+}
+
+/* PAYMENTS TABLE */
+function renderPayTable(){
+  const el=document.getElementById('p-table');if(!el)return;
+  const ps=sortedPays();
+  el.innerHTML=ps.map(p=>{
+    const inv=S.invoices.find(i=>i.id===p.invId);
+    return`<tr>
+      <td style="font-size:12px;color:var(--text-secondary)">${fd(p.date)}</td>
+      <td style="font-size:11px;font-weight:500">${p.invId}</td>
+      <td class="wn" style="font-size:12px;color:var(--text-secondary)">${inv?.desc?.split('—')[0]?.trim()||''}</td>
+      <td style="color:var(--green);font-weight:500">${fmt(p.amount)}</td>
+      <td><span class="mpill">${p.method}</span></td>
+      <td class="wn" style="font-size:12px;color:var(--text-tertiary)">${p.note||'—'}</td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="6" class="empty">No payments logged yet</td></tr>`;
+}
+
+function populateInvFilter(){
+  const el=document.getElementById('s-inv');if(!el)return;
+  el.innerHTML=`<option value="">All invoices</option>${S.invoices.map(i=>`<option value="${i.id}">${i.id}</option>`).join('')}`;
+}
+
+/* ── NAVIGATION ───────────────────────── */
+function nav(v){
+  ['home','invoices','screens','payments','links'].forEach(x=>{
+    const el=document.getElementById('view-'+x);
+    if(el)el.style.display=x===v?'flex':'none';
+  });
+  document.querySelectorAll('.ni').forEach((el,i)=>el.classList.toggle('active',['home','invoices','screens','payments','links'][i]===v));
+}
+
+/* ── MODALS ───────────────────────────── */
+function showM(html){document.getElementById('modal-root').innerHTML=`<div class="overlay" onclick="closeM(event)"><div class="modal" onclick="event.stopPropagation()">${html}</div></div>`;}
+function closeM(e){if(!e||e.target.classList.contains('overlay'))document.getElementById('modal-root').innerHTML='';}
+
+/* PAY MODAL */
+function openPayModal(invId){
+  const inv=S.invoices.find(i=>i.id===invId);if(!inv)return;
+  const t=getTotal(invId),p=getPaid(invId),pv=getPrev(invId),owed=t-p;
+  const hist=S.payments.filter(py=>py.invId===invId);
+  window._pm='Venmo';
+  showM(`<h2>Log payment — ${invId}</h2>
+    <div class="pay-sum">
+      <div class="psr"><span style="color:var(--text-secondary)">Invoice total</span><span style="font-weight:500">${fmt(t)}</span></div>
+      ${pv>0?`<div class="psr"><span style="color:var(--text-secondary)">Previously paid (base screens)</span><span style="color:var(--green)">${fmt(pv)}</span></div>`:''}
+      <div class="psr"><span style="color:var(--text-secondary)">Received so far</span><span style="color:var(--green)">${fmt(p)}</span></div>
+      <div class="pst"><span>Still owed</span><span style="color:${owed>0?'var(--amber)':'var(--green)'}">${fmt(owed)}</span></div>
+    </div>
+    <div class="f2">
+      <div><label class="fl">Amount received</label><input type="number" class="fi" id="pa-amt" value="${owed}" placeholder="0.00"></div>
+      <div><label class="fl">Date</label><input type="date" class="fi" id="pa-date" value="${today()}"></div>
+    </div>
+    <label class="fl" style="margin-bottom:7px">Payment method</label>
+    <div class="pm-grid">${METHODS.map(m=>`<button class="pm-btn${m==='Venmo'?' sel':''}" onclick="selPM(this,'${m}')">${m}</button>`).join('')}</div>
+    <div class="fr"><label class="fl">Note (optional)</label><input type="text" class="fi" id="pa-note" placeholder="e.g. final payment, partial"></div>
+    <div class="ma">
+      <button class="btn" onclick="closeM()">Cancel</button>
+      <button class="btn btn-g" onclick="recPay('${invId}')">Record payment</button>
+    </div>
+    ${hist.length?`<div class="ph"><div class="sl2" style="margin-bottom:8px">Payment history</div>${hist.map(py=>`<div class="pe"><div><div style="font-weight:500">${fmt(py.amount)}</div><div style="font-size:11px;color:var(--text-tertiary)">${fd(py.date)} · ${py.method}${py.note?' · '+py.note:''}</div></div></div>`).join('')}</div>`:''}`);
+}
+
+function selPM(btn,m){document.querySelectorAll('.pm-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');window._pm=m;}
+
+function recPay(invId){
+  const amt=+document.getElementById('pa-amt')?.value||0;
+  const date=document.getElementById('pa-date')?.value||today();
+  const note=document.getElementById('pa-note')?.value||'';
+  if(!amt){alert('Enter an amount');return;}
+  const pay={id:'p'+_pid++,invId,date,amount:amt,method:window._pm||'Venmo',note};
+  S.payments.push(pay);
+  const inv=S.invoices.find(i=>i.id===invId);
+  if(inv){const t=getTotal(invId),p=getPaid(invId);if(p>=t)inv.status='paid';else if(p>0)inv.status='partial';}
+  closeM();pushToSheet('add_payment',pay);renderAll();
+}
+
+/* LOG PAYMENT */
+function openLogPay(){
+  window._lpm='Venmo';
+  showM(`<h2>Log payment received</h2>
+    <div class="f2">
+      <div><label class="fl">Invoice</label>
+        <select class="fi" id="lp-inv">
+          <option value="">— select —</option>
+          ${S.invoices.map(i=>`<option value="${i.id}">${i.id} (${fmt(getTotal(i.id)-getPaid(i.id))} owed)</option>`).join('')}
+          <option value="none">No invoice / direct</option>
+        </select>
+      </div>
+      <div><label class="fl">Amount</label><input type="number" class="fi" id="lp-amt" placeholder="0.00"></div>
+    </div>
+    <div class="f2">
+      <div><label class="fl">Date</label><input type="date" class="fi" id="lp-date" value="${today()}"></div>
+      <div><label class="fl">Note</label><input type="text" class="fi" id="lp-note" placeholder="Optional"></div>
+    </div>
+    <label class="fl" style="margin-bottom:7px">Method</label>
+    <div class="pm-grid">${METHODS.map(m=>`<button class="pm-btn${m==='Venmo'?' sel':''}" onclick="selLPM(this,'${m}')">${m}</button>`).join('')}</div>
+    <div class="ma">
+      <button class="btn" onclick="closeM()">Cancel</button>
+      <button class="btn btn-g" onclick="saveLP()">Save</button>
+    </div>`);
+}
+
+function selLPM(btn,m){document.querySelectorAll('.pm-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');window._lpm=m;}
+
+function saveLP(){
+  const invId=document.getElementById('lp-inv')?.value;
+  const amt=+document.getElementById('lp-amt')?.value||0;
+  const date=document.getElementById('lp-date')?.value||today();
+  const note=document.getElementById('lp-note')?.value||'';
+  if(!amt){alert('Enter an amount');return;}
+  const pay={id:'p'+_pid++,invId:invId||'direct',date,amount:amt,method:window._lpm||'Venmo',note};
+  S.payments.push(pay);
+  if(invId&&invId!=='none'&&invId!=='direct'){
+    const inv=S.invoices.find(i=>i.id===invId);
+    if(inv){const t=getTotal(invId),p=getPaid(invId);if(p>=t)inv.status='paid';else if(p>0)inv.status='partial';}
+  }
+  closeM();pushToSheet('add_payment',pay);renderAll();
+}
+
+/* NEW INVOICE */
+function openNewInv(){
+  showM(`<h2>New invoice</h2>
+    <div class="f2">
+      <div><label class="fl">Invoice ID</label><input type="text" class="fi" id="ni-id" placeholder="INV-177900DEL"></div>
+      <div><label class="fl">Status</label>
+        <select class="fi" id="ni-s">
+          <option value="pending">Pending</option>
+          <option value="sent">Sent</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr"><label class="fl">Description</label><input type="text" class="fi" id="ni-desc" placeholder="What was delivered?"></div>
+    <div class="f2">
+      <div><label class="fl">Issue date</label><input type="date" class="fi" id="ni-iss" value="${today()}"></div>
+      <div><label class="fl">Due date</label><input type="date" class="fi" id="ni-due"></div>
+    </div>
+    <div class="fr"><label class="fl">Notes</label><input type="text" class="fi" id="ni-notes" placeholder="Any notes..."></div>
+    <div class="ma">
+      <button class="btn" onclick="closeM()">Cancel</button>
+      <button class="btn btn-p" onclick="saveNewInv()">Create &amp; save to Sheet</button>
+    </div>`);
+}
+
+function saveNewInv(){
+  const inv={
+    id:document.getElementById('ni-id')?.value||'INV-NEW',
+    desc:document.getElementById('ni-desc')?.value||'',
+    issued:document.getElementById('ni-iss')?.value||'',
+    due:document.getElementById('ni-due')?.value||'',
+    status:document.getElementById('ni-s')?.value||'pending',
+    notes:document.getElementById('ni-notes')?.value||''
+  };
+  S.invoices.unshift(inv);
+  closeM();pushToSheet('add_invoice',inv);renderAll();
+}
+
+/* PAY LINKS */
+function openGenLink(){
+  const sentInvs=S.invoices.filter(i=>statusOf(i)==='sent');
+  showM(`<h2>Generate pay link</h2>
+    <div class="fr">
+      <label class="fl">Invoice (or type custom label)</label>
+      <select class="fi" id="gl-sel" onchange="document.getElementById('gl-lbl').value=this.value;document.getElementById('gl-amt').value='';" style="margin-bottom:6px">
+        <option value="">Custom...</option>
+        ${sentInvs.map(i=>`<option value="${i.id} — ${i.desc.split('—')[0].trim()}">${i.id} — ${fmt(getTotal(i.id)-getPaid(i.id))} owed</option>`).join('')}
+      </select>
+      <input type="text" class="fi" id="gl-lbl" placeholder="Label...">
+    </div>
+    <div class="f2">
+      <div><label class="fl">Amount</label><input type="number" class="fi" id="gl-amt" placeholder="0.00"${sentInvs.length?' value="'+( getTotal(sentInvs[0].id)-getPaid(sentInvs[0].id) )+'"':''}></div>
+      <div><label class="fl">Method</label>
+        <select class="fi" id="gl-m">
+          <option>Venmo</option><option>Cash App</option><option>Zelle</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr"><label class="fl">Memo to sender</label><input type="text" class="fi" id="gl-memo" placeholder="e.g. Connection screens invoice May 2026"></div>
+    <div class="ma">
+      <button class="btn" onclick="closeM()">Cancel</button>
+      <button class="btn btn-p" onclick="genLink()">Generate</button>
+    </div>`);
+}
+
+function genLink(){
+  const lbl=document.getElementById('gl-lbl')?.value||'Payment';
+  const amt=+document.getElementById('gl-amt')?.value||0;
+  const method=document.getElementById('gl-m')?.value||'Venmo';
+  const memo=encodeURIComponent(document.getElementById('gl-memo')?.value||lbl);
+  let url='';
+  if(method==='Venmo')url=`https://venmo.com/jRoberts-0822?txn=pay&amount=${amt}&note=${memo}`;
+  else if(method==='Cash App')url=`https://cash.app/$JCreative/${amt}`;
+  else url=`mailto:JeanaiRoberts@Outlook.com?subject=Zelle — ${lbl}&body=Please send $${amt} to JeanaiRoberts@Outlook.com. Memo: ${decodeURIComponent(memo)}`;
+  S.links.unshift({lbl,amt,method,url});
+  closeM();nav('links');renderLinksList();
+}
+
+function renderLinksList(){
+  const el=document.getElementById('links-list');if(!el)return;
+  el.innerHTML=S.links.map((l,i)=>`
+    <div class="link-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;margin-bottom:3px">${l.lbl} — ${fmt(l.amt)} via ${l.method}</div>
+        <div class="link-url">${l.url}</div>
+      </div>
+      <button class="btn btn-xs" onclick="cpLink(${i},this)">Copy</button>
+    </div>`).join('')||'<div style="font-size:13px;color:var(--text-tertiary);padding:8px 0">No links yet. Generate one above.</div>';
+}
+
+function cpLink(i,btn){
+  navigator.clipboard?.writeText(S.links[i].url).catch(()=>{});
+  if(btn){btn.textContent='Copied!';setTimeout(()=>{btn.textContent='Copy';},1600);}
+}
+
+/* ── BOOT ─────────────────────────────── */
+function boot(){
+  const hasLocal=load();
+  if(hasLocal&&S.invoices.length){
+    setSyncStatus('green','Loaded from cache');
+  }else{
+    S.invoices=[...INV_SEED];
+    S.screens=[...SCR_SEED];
+    S.payments=[...PAY_SEED];
+    S.links=[];
+    save();
+    setSyncStatus('green','All invoice data loaded');
+  }
+  renderAll();
+  setTimeout(syncSheet,1200);
+}
+
+window._pm='Venmo';window._lpm='Venmo';
+boot();
+</script>
+</body>
+</html>
